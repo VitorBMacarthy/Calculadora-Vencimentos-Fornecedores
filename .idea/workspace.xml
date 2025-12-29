@@ -4,10 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="03f39290-05c6-45c0-9abd-0e37a6854ebc" name="Changes" comment="added Index.html">
-      <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/logo-mar.jpg" beforeDir="false" />
-    </list>
+    <list default="true" id="03f39290-05c6-45c0-9abd-0e37a6854ebc" name="Changes" comment="added Index.html" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
