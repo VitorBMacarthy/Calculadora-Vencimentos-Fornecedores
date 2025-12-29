@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Calculadora de Vencimentos</title>
+
+<style>
+/* ===== RESET ===== */
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+/* ===== FUNDO ===== */
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: linear-gradient(
+        135deg,
+        #061a2e 0%,
+        #0f5fa6 45%,
+        #4fa3e3 100%
+    );
+    background-attachment: fixed;
+    color: #ffffff;
+    padding: 24px;
+}
+
+/* ===== HEADER ===== */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+}
+
+.header h2 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+
+    /* 🔥 SOMBRA LARANJA VISÍVEL */
+    text-shadow:
+        2px 2px 0 #d86000,
+        4px 4px 6px rgba(0,0,0,0.4);
+}
+
+.logo {
+    height: 70px;
+}
+
+/* ===== INPUTS ===== */
+textarea {
+    width: 100%;
+    height: 150px;
+    border: 5px solid #d86000; /* BORDA MAIS GROSSA */
+    border-radius: 8px;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 14px;
+}
+
+input[type="number"] {
+    padding: 10px;
+    border-radius: 8px;
+    border: 5px solid #d86000; /* BORDA MAIS GROSSA */
+    width: 260px;
+    font-size: 14px;
+}
+
+/* ===== BOTÕES ===== */
+button {
+    background: #d86000;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 30px;
+    font-weight: bold;
+    color: #fff;
+    cursor: pointer;
+    margin-right: 10px;
+    font-size: 14px;
+}
+
+button:hover {
+    background: #6f3100;
+}
+
+/* ===== ESTRUTURA ===== */
+fieldset {
+    border: 2px solid rgba(255,255,255,0.4);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+}
+
+legend {
+    padding: 0 8px;
+}
+
+input {
+    accent-color: #d86000;
+}
+
+/* ===== TABELAS ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 18px;
+    background: #ffffff;
+    color: #333;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+th {
+    background: #d86000;
+    color: #fff;
+    padding: 10px;
+}
+
+td {
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+}
+
+.card {
+    background: #ffffff;
+    color: #333;
+    border-radius: 8px;
+    padding: 14px;
+    margin-top: 20px;
+}
+
+.total {
+    font-weight: bold;
+    color: #061a2e;
+}
+</style>
+</head>
+
+<body>
+
+<!-- ===== HEADER ===== -->
+<div class="header">
+    <h2>Calculadora de Datas de Vencimento</h2>
+    <img src="logo-mar.jpg" alt="MAR Food Service" class="logo">
+</div>
+
+<!-- ===== PRAZOS ===== -->
+<fieldset>
+<legend>Prazo</legend>
+<label>
+<input type="radio" name="prazo" value="21,28,35" checked>
+21 / 28 / 35
+</label><br>
+<label>
+<input type="radio" name="prazo" value="28,35,42">
+28 / 35 / 42
+</label>
+</fieldset>
+
+<!-- ===== LIMITE ===== -->
+<label><strong>Valor máximo por dia (R$):</strong></label><br>
+<input type="number" id="limiteDia" value="450000" step="0.01"><br><br>
+
+<!-- ===== ENTRADA ===== -->
+<label><strong>Cole os dados do Excel:</strong></label>
+<textarea id="entrada" placeholder="01/12/2025 12345 150000 1"></textarea><br><br>
+
+<button onclick="calcular()">Calcular</button>
+<button onclick="exportarExcel()">Exportar Excel</button>
+
+<div id="resultado"></div>
+
+<!-- ===== SCRIPT ===== -->
+<script>
+// ================= UTILIDADES =================
+function converterData(str) {
+    const [d, m, a] = str.split("/").map(Number);
+    return new Date(a, m - 1, d);
+}
+
+function formatarDataBR(date) {
+    return date.toLocaleDateString("pt-BR");
+}
+
+function converterValor(v) {
+    return parseFloat(
+        v.replace("R$", "")
+         .replace(/\./g, "")
+         .replace(",", ".")
+         .trim()
+    );
+}
+
+function formatarValorBR(v) {
+    return v.toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL"
+    });
+}
+
+// ================= CÁLCULO PRINCIPAL =================
+function calcular() {
+    const linhas = entrada.value.trim().split("\n");
+    const limite = parseFloat(limiteDia.value) || Infinity;
+
+    const prazos = document
+        .querySelector('input[name="prazo"]:checked')
+        .value.split(",")
+        .map(Number);
+
+    let itens = [];
+    let totais = {};
+
+    linhas.forEach(linha => {
+        if (!linha.trim()) return;
+
+        const p = linha.trim().split(/\s+/);
+        if (p.length < 4) return;
+
+        const dataLanc = converterData(p[0]);
+        const nota = p[1];
+        const valor = converterValor(p[2]);
+        const parcela = parseInt(p[3]);
+
+        let venc = new Date(dataLanc);
+        venc.setDate(venc.getDate() + prazos[Math.min(parcela - 1, 2)]);
+
+        while (true) {
+            const chave = formatarDataBR(venc);
+            const totalDia = totais[chave] || 0;
+
+            if (totalDia + valor <= limite) {
+                totais[chave] = totalDia + valor;
+                itens.push({
+                    nota,
+                    parcela,
+                    valor,
+                    venc: chave
+                });
+                break;
+            }
+
+            venc.setDate(venc.getDate() + 1);
+        }
+    });
+
+    // ================= RENDERIZAÇÃO =================
+    let html = `
+        <h3>Detalhamento dos Lançamentos</h3>
+        <table>
+            <tr>
+                <th>Nota</th>
+                <th>Parcela</th>
+                <th>Valor</th>
+                <th>Vencimento</th>
+            </tr>`;
+
+    itens.forEach(i => {
+        html += `
+            <tr>
+                <td>${i.nota}</td>
+                <td>${i.parcela}</td>
+                <td>${formatarValorBR(i.valor)}</td>
+                <td>${i.venc}</td>
+            </tr>`;
+    });
+
+    html += `</table>`;
+
+    html += `
+        <div class="card">
+            <h3>Totais por Data de Vencimento</h3>
+            <table>
+                <tr>
+                    <th>Data</th>
+                    <th>Total do Dia</th>
+                </tr>`;
+
+    Object.keys(totais)
+        .sort((a, b) => converterData(a) - converterData(b))
+        .forEach(d => {
+            html += `
+                <tr>
+                    <td>${d}</td>
+                    <td class="total">${formatarValorBR(totais[d])}</td>
+                </tr>`;
+        });
+
+    html += `
+            </table>
+        </div>`;
+
+    resultado.innerHTML = html;
+
+    // ================= DADOS PARA EXPORTAÇÃO =================
+    window.exportData = {
+        itens: itens,
+        totais: totais
+    };
+}
+
+// ================= EXPORTAÇÃO PARA EXCEL =================
+function exportarExcel() {
+    if (!window.exportData) {
+        alert("Nenhum cálculo realizado ainda.");
+        return;
+    }
+
+    let csv = "Nota;Parcela;Valor;Vencimento\n";
+
+    window.exportData.itens.forEach(i => {
+        csv += `${i.nota};${i.parcela};${i.valor.toLocaleString("pt-BR", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        })};${i.venc}\n`;
+    });
+
+    csv += "\nVencimento;Total do Dia\n";
+
+    Object.keys(window.exportData.totais)
+        .sort((a, b) => converterData(a) - converterData(b))
+        .forEach(d => {
+            csv += `${d};${window.exportData.totais[d].toLocaleString("pt-BR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            })}\n`;
+        });
+
+    const blob = new Blob(
+        ["\uFEFF" + csv],
+        { type: "text/csv;charset=utf-8;" }
+    );
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "vencimentos.csv";
+    link.click();
+}
+</script>
